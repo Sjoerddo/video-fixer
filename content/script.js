@@ -68,10 +68,22 @@ class VideoFixer {
 }
 
 (function () {
-    var fixer, player,
-        videoSet = false,
-        isYoutube = window.location.href.includes('youtube.com'),
-        video = document.querySelector('video');
+    var videoSet = false;
+    var video = document.querySelector('video');
+
+    function getFixer(video, controls, href) {
+        if (href.includes('youtube.com')) {
+            return new VideoFixer(video, document.getElementById('player-api'), [controls], '60px', '10px');
+        } else if (href.includes('dumpert.com')) {
+            return new VideoFixer(video, document.querySelector('.dump-player'));
+        } else {
+            return null;
+        }
+    }
+
+    function addPixels(pixels, amount) {
+        return (pixels ? parseInt(pixels.slice(0, -2), 10) : 0) + amount + 'px';
+    }
 
     var controls = {
         el: document.querySelector('.ytp-chrome-bottom'),
@@ -80,24 +92,15 @@ class VideoFixer {
         }
     };
 
-    function addPixels(pixels, amount) {
-        return parseInt(pixels.slice(0, -2), 10) + amount + 'px';
+    var fixer = getFixer(document.querySelector('video'), controls, window.location.href);
+
+    if (fixer) {
+        window.onscroll = function () {
+            if (!videoSet) {
+                videoSet = true;
+            }
+
+            fixer.onScroll();
+        };
     }
-
-    if (isYoutube) {
-        player = document.getElementById('player-api');
-        fixer = new VideoFixer(video, player, [controls], '60px', '10px');
-    } else {
-        player = document.querySelector('.dump-player');
-        fixer = new VideoFixer(video, player);
-    }
-
-    window.onscroll = function () {
-        if (!videoSet) {
-            fixer.video = document.querySelector('video');
-            videoSet = true;
-        }
-
-        fixer.onScroll();
-    };
 })();
