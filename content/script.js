@@ -1,106 +1,148 @@
-var APPEND_WIDTH = '499.2px';
-var APPEND_HEIGHT = '280.8px';
-var REMOVE_WIDTH = '890px';
-var REMOVE_HEIGHT = '500px';
+var TYPE = {
+    Append: 'appendStyle',
+    Original: 'originalStyle'
+};
 
 class VideoFixer {
-    constructor(video, player, nodes, offsetTop = '0', offsetRight = '0') {
+    constructor(video, player, toAppend, toRemove, nodes) {
         this.video = video;
         this.player = player;
+        this.toAppend = toAppend;
+        this.toRemove = toRemove;
         this.nodes = nodes;
-        this.removedStyle = this.player.style;
+        this.playerStyle = this.player.style;
         this.appended = false;
-
-        this.style = {
-            position: 'fixed',
-            top: offsetTop,
-            right: offsetRight,
-            'z-index': 9990,
-            width: APPEND_WIDTH,
-            height: APPEND_HEIGHT
-        };
     }
 
     onScroll() {
-        var height = window.outerHeight;
-        var line = height * 0.62;
-
-        var docElement = document.documentElement;
-        var top = (window.pageYOffset || docElement.scrollTop) - (docElement.clientTop || 0);
+        var line = window.outerHeight * 0.62;
+        var { scrollTop, clientTop } = document.documentElement;
+        var top = (window.pageYOffset || scrollTop) - (clientTop || 0);
 
         if (this.appended && top <= line) {
-            this.removeStyle();
+            this._removeStyle();
         } else if (!this.appended && top > line) {
-            this.appendStyle();
+            this._appendStyle();
         }
     }
 
-    appendStyle() {
-        this.video.style.width = APPEND_WIDTH;
-        this.video.style.height = APPEND_HEIGHT;
+    _appendStyle() {
+        this.video.style.width = this.toAppend.width;
+        this.video.style.height = this.toAppend.height;
 
-        Object.keys(this.style).forEach((prop) => {
-            this.player.style[prop] = this.style[prop];
+        Object.keys(this.toAppend).forEach((prop) => {
+            this.player.style[prop] = this.toAppend[prop];
         });
 
         if (this.nodes) {
-            this.appendNodes();
+            this._loopNodes(TYPE.Append);
         }
 
         this.appended = true;
     }
 
-    appendNodes() {
-        this.nodes.forEach((node) => {
-            Object.keys(node.style).forEach((prop) => {
-                node.el.style[prop] = node.style[prop];
-            });
-        });
+    _removeStyle() {
+        this.video.style.width = this.toRemove.width;
+        this.video.style.height = this.toRemove.height;
+        this.player.style = this.playerStyle;
+
+        if (this.nodes) {
+            this._loopNodes(TYPE.Original);
+        }
+
+        this.appended = false;
     }
 
-    removeStyle() {
-        this.video.style.width = REMOVE_WIDTH;
-        this.video.style.height = REMOVE_HEIGHT;
-
-        this.player.style = this.removedStyle;
-        this.appended = false;
+    _loopNodes(type) {
+        this.nodes.forEach((node) => {
+            Object.keys(node[type]).forEach((prop) => {
+                node.el.style[prop] = node[type][prop];
+            });
+        });
     }
 }
 
 (function () {
-    var videoSet = false;
-    var video = document.querySelector('video');
-
-    function getFixer(video, controls, href) {
-        if (href.includes('youtube.com')) {
-            return new VideoFixer(video, document.getElementById('player-api'), [controls], '60px', '10px');
-        } else if (href.includes('dumpert.com')) {
-            return new VideoFixer(video, document.querySelector('.dump-player'));
-        } else {
-            return null;
+    const YOUTUBE_SETTINGS = {
+        append: {
+            width: '499.2px',
+            height: '280.8px'
+        },
+        original: {
+            width: '854px',
+            height: '480px'
         }
+    };
+
+    const DUMPERT_SETTINGS = {
+        append: {
+            width: '427px',
+            height: '240px'
+        },
+        original: {
+            width: '854px',
+            height: '480px'
+        }
+    };
+
+    setTimeout(() => {
+        var fixer = getFixer(window.location.href);
+
+        window.onscroll = () => {
+            fixer.onScroll();
+        };
+    }, 3000);
+
+    function getFixer(pageUrl) {
+        if (pageUrl.includes('youtube.com/watch')) {
+            const { append, original } = YOUTUBE_SETTINGS;
+            return new VideoFixer(
+                document.querySelector('video'),
+                document.getElementById('player-api'),
+                createConfig(append.width, append.height, '60px', '4px'),
+                createConfig(original.width, original.height),
+                [{
+                    el: document.querySelector('.ytp-chrome-bottom'),
+                    appendStyle: {
+                        width: addPixels(append.width, -20)
+                    },
+                    originalStyle: {
+                        width: addPixels(original.width, -20)
+                    }
+                }]
+            );
+        } else if (pageUrl.includes('dumpert.nl/mediabase')) {
+            const { append, original } = DUMPERT_SETTINGS;
+            return new VideoFixer(
+                document.querySelector('video'),
+                document.querySelector('.dump-player'),
+                createConfig(append.width, append.height),
+                createConfig(original.width, original.height),
+                [{
+                    el: document.querySelector('article'),
+                    appendStyle: {
+                        height: '473px'
+                    },
+                    originalStyle: {
+                        height: '638.984px'
+                    }
+                }]
+            );
+        }
+    }
+
+    function createConfig(width, height, offsetTop, offsetRight) {
+        return {
+            position: 'fixed',
+            width: width,
+            height: height,
+            top: offsetTop || '0',
+            right: offsetRight || '0',
+            'z-index': 9990
+        };
     }
 
     function addPixels(pixels, amount) {
         return (pixels ? parseInt(pixels.slice(0, -2), 10) : 0) + amount + 'px';
-    }
-
-    var controls = {
-        el: document.querySelector('.ytp-chrome-bottom'),
-        style: {
-            width: addPixels(APPEND_WIDTH, -20)
-        }
-    };
-
-    var fixer = getFixer(document.querySelector('video'), controls, window.location.href);
-
-    if (fixer) {
-        window.onscroll = function () {
-            if (!videoSet) {
-                videoSet = true;
-            }
-
-            fixer.onScroll();
-        };
     }
 })();
