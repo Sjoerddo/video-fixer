@@ -20,13 +20,13 @@ class VideoFixer {
         var top = (window.pageYOffset || scrollTop) - (clientTop || 0);
 
         if (this.appended && top <= line) {
-            this._removeStyle();
+            this._remove();
         } else if (!this.appended && top > line) {
-            this._appendStyle();
+            this._append();
         }
     }
 
-    _appendStyle() {
+    _append() {
         this.video.style.width = this.toAppend.width;
         this.video.style.height = this.toAppend.height;
 
@@ -41,7 +41,7 @@ class VideoFixer {
         this.appended = true;
     }
 
-    _removeStyle() {
+    _remove() {
         this.video.style.width = this.toRemove.width;
         this.video.style.height = this.toRemove.height;
         this.player.style = this.playerStyle;
@@ -63,10 +63,12 @@ class VideoFixer {
 }
 
 (function () {
+    const YT_WIDTH = window.outerWidth * 0.36;
+    const YT_HEIGHT = YT_WIDTH * 0.5625;
     const YOUTUBE_SETTINGS = {
         append: {
-            width: '499.2px',
-            height: '280.8px'
+            width: YT_WIDTH + 'px',
+            height: YT_HEIGHT + 'px'
         },
         original: {
             width: '854px',
@@ -74,10 +76,12 @@ class VideoFixer {
         }
     };
 
+    const D_WIDTH = window.outerWidth * 0.3125;
+    const D_HEIGHT = D_WIDTH * 0.5620;
     const DUMPERT_SETTINGS = {
         append: {
-            width: '427px',
-            height: '240px'
+            width: D_WIDTH + 'px',
+            height: D_HEIGHT + 'px'
         },
         original: {
             width: '854px',
@@ -91,43 +95,43 @@ class VideoFixer {
         window.onscroll = () => {
             fixer.onScroll();
         };
-    }, 3000);
+    }, 4000);
 
     function getFixer(pageUrl) {
         if (pageUrl.includes('youtube.com/watch')) {
             const { append, original } = YOUTUBE_SETTINGS;
-            return new VideoFixer(
-                document.querySelector('video'),
-                document.getElementById('player-api'),
-                createConfig(append.width, append.height, '60px', '4px'),
-                createConfig(original.width, original.height),
-                [{
-                    el: document.querySelector('.ytp-chrome-bottom'),
-                    appendStyle: {
-                        width: addPixels(append.width, -20)
-                    },
-                    originalStyle: {
-                        width: addPixels(original.width, -20)
-                    }
-                }]
-            );
+            const { width, height } = original;
+            const video = document.querySelector('video');
+            const player = document.getElementById('player-api');
+            const config = createConfig(append.width, append.height, '50px');
+            const nodes = [{
+                el: document.querySelector('.ytp-chrome-bottom'),
+                appendStyle: {
+                    width: addPixels(append.width, -20)
+                },
+                originalStyle: {
+                    width: addPixels(original.width, -20)
+                }
+            }];
+
+            return new VideoFixer(video, player, config, { width, height }, nodes);
         } else if (pageUrl.includes('dumpert.nl/mediabase')) {
             const { append, original } = DUMPERT_SETTINGS;
-            return new VideoFixer(
-                document.querySelector('video'),
-                document.querySelector('.dump-player'),
-                createConfig(append.width, append.height),
-                createConfig(original.width, original.height),
-                [{
-                    el: document.querySelector('article'),
-                    appendStyle: {
-                        height: '473px'
-                    },
-                    originalStyle: {
-                        height: '638.984px'
-                    }
-                }]
-            );
+            const { width, height } = original;
+            const video = document.querySelector('video');
+            const player = document.querySelector('.dump-player');
+            const config = createConfig(append.width, append.height);
+            const nodes = [{
+                el: document.querySelector('article'),
+                appendStyle: {
+                    height: '473px'
+                },
+                originalStyle: {
+                    height: '638.984px'
+                }
+            }];
+
+            return new VideoFixer(video, player, config, { width, height }, nodes);
         }
     }
 
