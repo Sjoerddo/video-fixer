@@ -1,4 +1,4 @@
-var TYPE = {
+const TYPE = {
     Append: 'appendStyle',
     Original: 'originalStyle'
 };
@@ -15,9 +15,9 @@ class VideoFixer {
     }
 
     onScroll() {
-        var line = window.outerHeight * 0.62;
-        var { scrollTop, clientTop } = document.documentElement;
-        var top = (window.pageYOffset || scrollTop) - (clientTop || 0);
+        const line = window.outerHeight * 0.62;
+        const { scrollTop, clientTop } = document.documentElement;
+        const top = (window.pageYOffset || scrollTop) - (clientTop || 0);
 
         if (this.appended && top <= line) {
             this._remove();
@@ -34,10 +34,7 @@ class VideoFixer {
             this.player.style[prop] = this.toAppend[prop];
         });
 
-        if (this.nodes) {
-            this._loopNodes(TYPE.Append);
-        }
-
+        this._loopNodes(TYPE.Append);
         this.appended = true;
     }
 
@@ -46,19 +43,18 @@ class VideoFixer {
         this.video.style.height = this.toRemove.height;
         this.player.style = this.playerStyle;
 
-        if (this.nodes) {
-            this._loopNodes(TYPE.Original);
-        }
-
+        this._loopNodes(TYPE.Original);
         this.appended = false;
     }
 
     _loopNodes(type) {
-        this.nodes.forEach((node) => {
-            Object.keys(node[type]).forEach((prop) => {
-                node.el.style[prop] = node[type][prop];
+        if (this.nodes) {
+            this.nodes.forEach((node) => {
+                Object.keys(node[type]).forEach((prop) => {
+                    node.el.style[prop] = node[type][prop];
+                });
             });
-        });
+        }
     }
 }
 
@@ -90,7 +86,7 @@ class VideoFixer {
     };
 
     setTimeout(() => {
-        var fixer = getFixer(window.location.href);
+        const fixer = getFixer(window.location.href);
 
         window.onscroll = () => {
             fixer.onScroll();
