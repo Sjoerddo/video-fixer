@@ -65,62 +65,86 @@ class VideoFixer {
         append: { width: Width + 'px', height: Height + 'px' },
         original: { width: '854px', height: '480px' }
     };
+    const FixedStyle = {
+        backgroundColor: 'black',
+        position: 'fixed',
+        top: '0',
+        right: '0',
+        'z-index': 9990
+    };
+
+    const appendFixedStyle = el => appendStyles(el, FixedStyle);
+    const isEmbedded = url => url.includes('youtube.com/embed/');
 
     if (window.location.href.includes('/mediabase/')) {
         setTimeout(() => {
             const fixer = getFixer();
+            if (!fixer) return;
+
             window.addEventListener('scroll', () => {
                 fixer.onScroll();
             });
         }, 4000);
     } else {
-        chrome.runtime.sendMessage({ type: 'get' }, ({ video }) => {
-
-            const style = { position: 'fixed', top: '0', right: '0', 
-            'z-index': 9990, 'background-color': 'black'};
+        chrome.runtime.sendMessage({ type: 'get' }, (response) => {
+            const videoSettings = response.video;
+            const { url } = videoSettings;
 
             // Check if there is nothing in storage
-            if (video.url != null) {
-                console.log(video);
-                initializeVideo(document.body, video, Width, Height, style);
+            if (url === undefined) return;
+
+            if (isEmbedded(url)) {
+                // create youtube frame
+                const fixedPlayer = document.createElement('div');
+                fixedPlayer.id = 'fixed_player';
+                appendFixedStyle(fixedPlayer);
+                document.body.appendChild(fixedPlayer);
+            } else {
+                initializeVideo(document.body, Width, Height, videoSettings);
             }
         });
     }
 
-    function initializeVideo(parent, videoLocal, width, height, style) {
-        const container = document.createElement('container');
-        const video = document.createElement('video');
+    function initializeVideo(parent, width, height, settings) {
+        const container = document.createElement('section');
+        const video = createVideo(width, height, settings);
         parent.appendChild(container);
-        loopStyles(container, { overflow: 'auto', position: 'fixed', top: '0', right: '0'})
+        appendFixedStyle(container);
         container.appendChild(video);
 
-        // Add close button
-        var button = document.createElement('close');
-        button.innerHTML = '✖';
-        loopStyles(button, {'background-color': 'transperant', 
-            position: 'fixed', top: '0px', right: '5px',
-            color: 'white', 'z-index': 9991, 'font-size': '20px' });
-        container.appendChild(button);
-        
-        button.addEventListener ('click', function() {
-          container.removeChild(video);
-          container.removeChild(button);
-          chrome.runtime.sendMessage({ type: 'set', video: {} });
-        });
+        container.appendChild(createCloseButton(() => {
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+            chrome.runtime.sendMessage({ type: 'set', video: {} });
+        }));
 
-        video.width = width;
-        video.height = height;
-        loopStyles(video, style);
-        video.src = videoLocal.url;
-        video.controls = 'controls';
-        video.currentTime = videoLocal.time;
-        video.volume = videoLocal.volume;
-
-        if (!videoLocal.isPaused) 
-            video.play();
+        if (!settings.isPaused) video.play();
     }
 
-    function loopStyles(el, styles) {
+    function createCloseButton(onclick) {
+        const button = document.createElement('a');
+        button.innerHTML = '✖';
+        appendStyles(button, {
+            backgroundColor: 'transparent', position: 'fixed', top: '0px', cursor: 'pointer',
+            right: '5px', color: 'white', 'z-index': 9991, fontSize: '20px'
+        });
+        button.addEventListener('click', onclick);
+        return button;
+    }
+
+    function createVideo(width, height, settings) {
+        const video = document.createElement('video');
+        video.width = width;
+        video.height = height;
+        video.src = settings.url;
+        video.controls = 'controls';
+        video.currentTime = settings.time;
+        video.volume = settings.volume;
+        return video;
+    }
+
+    function appendStyles(el, styles) {
         Object.keys(styles).forEach((prop) => {
             el.style[prop] = styles[prop];
         });
@@ -130,6 +154,7 @@ class VideoFixer {
         const { append, original } = Settings;
         const { width, height } = original;
         const video = document.querySelector('video');
+        if (!video) return null;
 
         const player = document.querySelector('.dump-player');
         const config = createConfig(append.width, append.height);
@@ -155,14 +180,17 @@ class VideoFixer {
 })();
 
 window.onunload = () => {
-
     const video = document.getElementsByTagName('video')[0] || document.querySelector('iframe');
     const time = video.currentTime;
     const url = video.src;
+    const duration = video.duration;
     const volume = video.volume;
     const isPaused = video.paused;
 
-    if (time && url) {
+    // Video has ended
+    if (time === duration) {
+        chrome.runtime.sendMessage({ type: 'set', video: {} });
+    } else if (time && url) {
         chrome.runtime.sendMessage({ type: 'set', video: { time, url, volume, isPaused } });
     }
 };
