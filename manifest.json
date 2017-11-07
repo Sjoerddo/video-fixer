@@ -6,12 +6,19 @@
     {
       "run_at": "document_end",
       "matches": [
-        "*://www.youtube.com/watch*",
-        "*://www.dumpert.nl/mediabase/*"
+        "*://www.dumpert.nl/*"
       ],
       "js": [
         "content/script.js"
       ]
     }
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "permissions": [
+    "tabs"
   ]
 }

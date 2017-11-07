@@ -1,4 +1,4 @@
-const TYPE = {
+const Type = {
     Append: 'appendStyle',
     Original: 'originalStyle'
 };
@@ -34,7 +34,7 @@ class VideoFixer {
             this.player.style[prop] = this.toAppend[prop];
         });
 
-        this._loopNodes(TYPE.Append);
+        this._loopNodes(Type.Append);
         this.appended = true;
     }
 
@@ -43,7 +43,7 @@ class VideoFixer {
         this.video.style.height = this.toRemove.height;
         this.player.style = this.playerStyle;
 
-        this._loopNodes(TYPE.Original);
+        this._loopNodes(Type.Original);
         this.appended = false;
     }
 
@@ -58,77 +58,61 @@ class VideoFixer {
     }
 }
 
-(function () {
-    const YT_WIDTH = window.outerWidth * 0.36;
-    const YT_HEIGHT = YT_WIDTH * 0.5625;
-    const YOUTUBE_SETTINGS = {
-        append: {
-            width: YT_WIDTH + 'px',
-            height: YT_HEIGHT + 'px'
-        },
-        original: {
-            width: '854px',
-            height: '480px'
-        }
+(() => {
+    const Width = window.outerWidth * 0.3125;
+    const Height = Width * 0.5620;
+    const Settings = {
+        append: { width: Width + 'px', height: Height + 'px' },
+        original: { width: '854px', height: '480px' }
     };
 
-    const D_WIDTH = window.outerWidth * 0.3125;
-    const D_HEIGHT = D_WIDTH * 0.5620;
-    const DUMPERT_SETTINGS = {
-        append: {
-            width: D_WIDTH + 'px',
-            height: D_HEIGHT + 'px'
-        },
-        original: {
-            width: '854px',
-            height: '480px'
-        }
-    };
+    if (window.location.href.includes('/mediabase/')) {
+        setTimeout(() => {
+            const fixer = getFixer();
+            window.addEventListener('scroll', () => {
+                fixer.onScroll();
+            });
+        }, 4000);
+    } else {
+        chrome.runtime.sendMessage({ type: 'get' }, ({ video }) => {
+            const style = { position: 'fixed', top: '0', right: '0', 'z-index': 9990 };
+            initializeVideo(document.body, video.url, Width, Height, style, video.time);
+        });
+    }
 
-    setTimeout(() => {
-        const fixer = getFixer(window.location.href);
+    function initializeVideo(parent, src, width, height, style, time) {
+        const video = document.createElement('video');
+        parent.appendChild(video);
 
-        window.onscroll = () => {
-            fixer.onScroll();
-        };
-    }, 4000);
+        video.width = width;
+        video.height = height;
+        loopStyles(video, style);
+        video.src = src;
+        video.controls = 'controls';
+        video.currentTime = time;
 
-    function getFixer(pageUrl) {
-        if (pageUrl.includes('youtube.com/watch')) {
-            const { append, original } = YOUTUBE_SETTINGS;
-            const { width, height } = original;
-            const video = document.querySelector('video');
-            const player = document.getElementById('player-api');
-            const config = createConfig(append.width, append.height, '50px');
-            const nodes = [{
-                el: document.querySelector('.ytp-chrome-bottom'),
-                appendStyle: {
-                    width: addPixels(append.width, -20)
-                },
-                originalStyle: {
-                    width: addPixels(original.width, -20)
-                }
-            }];
+        video.play();
+    }
 
-            return new VideoFixer(video, player, config, { width, height }, nodes);
-        } else if (pageUrl.includes('dumpert.nl/mediabase')) {
-            const { append, original } = DUMPERT_SETTINGS;
-            const { width, height } = original;
-            const video = document.querySelector('video');
-            const player = document.querySelector('.dump-player');
-            const config = createConfig(append.width, append.height);
-            const nodes = [{
-                el: document.querySelector('article'),
-                appendStyle: {
-                    height: '473px'
-                },
-                originalStyle: {
-                    height: '638.984px'
-                }
-            }];
+    function loopStyles(el, styles) {
+        Object.keys(styles).forEach((prop) => {
+            el.style[prop] = styles[prop];
+        });
+    }
 
-            return new VideoFixer(video, player, config, { width, height }, nodes);
-        }
+    function getFixer() {
+        const { append, original } = Settings;
+        const { width, height } = original;
+        const video = document.querySelector('video');
+        const player = document.querySelector('.dump-player');
+        const config = createConfig(append.width, append.height);
+        const nodes = [{
+            el: document.querySelector('article'),
+            appendStyle: { height: '473px' },
+            originalStyle: { height: '638.984px' }
+        }];
+
+        return new VideoFixer(video, player, config, { width, height }, nodes);
     }
 
     function createConfig(width, height, offsetTop, offsetRight) {
@@ -141,8 +125,14 @@ class VideoFixer {
             'z-index': 9990
         };
     }
-
-    function addPixels(pixels, amount) {
-        return (pixels ? parseInt(pixels.slice(0, -2), 10) : 0) + amount + 'px';
-    }
 })();
+
+window.onunload = () => {
+    const video = document.getElementsByTagName('video')[0] || document.querySelector('iframe');
+    const time = video.currentTime;
+    const url = video.src;
+
+    if (time && url) {
+        chrome.runtime.sendMessage({ type: 'set', video: { time, url } });
+    }
+};
