@@ -75,25 +75,49 @@ class VideoFixer {
         }, 4000);
     } else {
         chrome.runtime.sendMessage({ type: 'get' }, ({ video }) => {
+
             const style = { position: 'fixed', top: '0', right: '0', 
             'z-index': 9990, 'background-color': 'black'};
 
-            initializeVideo(document.body, video.url, Width, Height, style, video.time);
+            // Check if there is nothing in storage
+            if (video.url != null) {
+                console.log(video);
+                initializeVideo(document.body, video, Width, Height, style);
+            }
         });
     }
 
-    function initializeVideo(parent, src, width, height, style, time) {
+    function initializeVideo(parent, videoLocal, width, height, style) {
+        const container = document.createElement('container');
         const video = document.createElement('video');
-        parent.appendChild(video);
+        parent.appendChild(container);
+        loopStyles(container, { overflow: 'auto', position: 'fixed', top: '0', right: '0'})
+        container.appendChild(video);
+
+        // Add close button
+        var button = document.createElement('close');
+        button.innerHTML = '✖';
+        loopStyles(button, {'background-color': 'transperant', 
+            position: 'fixed', top: '0px', right: '5px',
+            color: 'white', 'z-index': 9991, 'font-size': '20px' });
+        container.appendChild(button);
+        
+        button.addEventListener ('click', function() {
+          container.removeChild(video);
+          container.removeChild(button);
+          chrome.runtime.sendMessage({ type: 'set', video: {} });
+        });
 
         video.width = width;
         video.height = height;
         loopStyles(video, style);
-        video.src = src;
+        video.src = videoLocal.url;
         video.controls = 'controls';
-        video.currentTime = time;
+        video.currentTime = videoLocal.time;
+        video.volume = videoLocal.volume;
 
-        video.play();
+        if (!videoLocal.isPaused) 
+            video.play();
     }
 
     function loopStyles(el, styles) {
@@ -130,16 +154,15 @@ class VideoFixer {
     }
 })();
 
-// TODO:
-//      - If the video is paused keep it paused
 window.onunload = () => {
 
     const video = document.getElementsByTagName('video')[0] || document.querySelector('iframe');
     const time = video.currentTime;
     const url = video.src;
-    console.log(video.paused);
+    const volume = video.volume;
+    const isPaused = video.paused;
 
     if (time && url) {
-        chrome.runtime.sendMessage({ type: 'set', video: { time, url } });
+        chrome.runtime.sendMessage({ type: 'set', video: { time, url, volume, isPaused } });
     }
 };
