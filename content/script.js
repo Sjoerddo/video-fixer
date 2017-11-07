@@ -75,7 +75,9 @@ class VideoFixer {
         }, 4000);
     } else {
         chrome.runtime.sendMessage({ type: 'get' }, ({ video }) => {
-            const style = { position: 'fixed', top: '0', right: '0', 'z-index': 9990 };
+            const style = { position: 'fixed', top: '0', right: '0', 
+            'z-index': 9990, 'background-color': 'black'};
+
             initializeVideo(document.body, video.url, Width, Height, style, video.time);
         });
     }
@@ -104,6 +106,7 @@ class VideoFixer {
         const { append, original } = Settings;
         const { width, height } = original;
         const video = document.querySelector('video');
+
         const player = document.querySelector('.dump-player');
         const config = createConfig(append.width, append.height);
         const nodes = [{
@@ -127,10 +130,14 @@ class VideoFixer {
     }
 })();
 
+// TODO:
+//      - If the video is paused keep it paused
 window.onunload = () => {
+
     const video = document.getElementsByTagName('video')[0] || document.querySelector('iframe');
     const time = video.currentTime;
     const url = video.src;
+    console.log(video.paused);
 
     if (time && url) {
         chrome.runtime.sendMessage({ type: 'set', video: { time, url } });
