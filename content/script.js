@@ -79,11 +79,12 @@ class VideoFixer {
     if (window.location.href.includes('/mediabase/')) {
         setTimeout(() => {
             const fixer = getFixer();
-            if (!fixer) return;
 
-            window.addEventListener('scroll', () => {
-                fixer.onScroll();
-            });
+            if (fixer !== null) {
+                window.addEventListener('scroll', () => {
+                    fixer.onScroll();
+                });
+            }
         }, 4000);
     } else {
         chrome.runtime.sendMessage({ type: 'get' }, (response) => {
@@ -94,11 +95,7 @@ class VideoFixer {
             if (url === undefined) return;
 
             if (isEmbedded(url)) {
-                // create youtube frame
-                const fixedPlayer = document.createElement('div');
-                fixedPlayer.id = 'fixed_player';
-                appendFixedStyle(fixedPlayer);
-                document.body.appendChild(fixedPlayer);
+                initializeFrame(document.body, Width, Height, createEmbeddedUrl(url));
             } else {
                 initializeVideo(document.body, Width, Height, videoSettings);
             }
@@ -120,6 +117,24 @@ class VideoFixer {
         }));
 
         if (!settings.isPaused) video.play();
+    }
+
+    function initializeFrame(parent, width, height, src) {
+        const frame = document.createElement('iframe');
+        appendFixedStyle(frame);
+        frame.id = 'fixed-player';
+        frame.width = width;
+        frame.height = height;
+        frame.src = src;
+        parent.appendChild(frame);
+    }
+
+    function createEmbeddedUrl(src) {
+        const parser = document.createElement('a');
+        parser.href = src;
+        const path = parser.pathname;
+        const videoId = path.split('/')[2];
+        return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
     }
 
     function createCloseButton(onclick) {
@@ -188,9 +203,9 @@ window.onunload = () => {
     const isPaused = video.paused;
 
     // Video has ended
-    if (time === duration) {
+    if (time && duration && time === duration) {
         chrome.runtime.sendMessage({ type: 'set', video: {} });
-    } else if (time && url) {
+    } else if (url) {
         chrome.runtime.sendMessage({ type: 'set', video: { time, url, volume, isPaused } });
     }
 };

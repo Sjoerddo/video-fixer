@@ -4,11 +4,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (type === 'set') {
         localStorage.setItem(key, JSON.stringify(video));
-        console.log(video);
+        console.log('set', video);
         sendResponse({});
     } else if (type === 'get') {
         const savedVideo = JSON.parse(localStorage.getItem(key));
-        console.log(savedVideo);
+        console.log('get', savedVideo);
         sendResponse({ video: savedVideo });
     }
 });
