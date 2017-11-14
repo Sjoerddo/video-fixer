@@ -1,14 +1,12 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    const key = 'video';
-    const { type, video } = request;
+    const key = 'item';
+    const { type, item } = request;
 
-    if (type === 'set') {
-        localStorage.setItem(key, JSON.stringify(video));
-        console.log('set', video);
+    if (type === 'get') {
+        const item = JSON.parse(localStorage.getItem(key)) || {};
+        sendResponse({ item });
+    } else if (type === 'set') {
+        localStorage.setItem(key, JSON.stringify(item));
         sendResponse({});
-    } else if (type === 'get') {
-        const savedVideo = JSON.parse(localStorage.getItem(key));
-        console.log('get', savedVideo);
-        sendResponse({ video: savedVideo });
     }
 });
