@@ -2,7 +2,7 @@ const Type = {
     Append: 'appendStyle',
     Original: 'originalStyle'
 };
-
+/*
 class VideoFixer {
     constructor(video, player, toAppend, toRemove, nodes) {
         this.video = video;
@@ -190,7 +190,8 @@ class VideoFixer {
         return { type: 'video', src, currentTime, duration, volume, paused };
     }
 
-    window.addEventListener('unload', () => {
+    window.addEventListener('unload', (e) => {
+		alert(e);
         const image = document.querySelector('img.player');
         const video = getCurrentVideo();
         if (!image && !video) return;
@@ -203,4 +204,56 @@ class VideoFixer {
             item: currentTime && duration && (currentTime === duration) ? {} : item
         });
     });
-})();
+})();*/
+
+var 
+	getCurrentVideo = () => {
+        const video = document.getElementsByTagName('video')[0];
+        if (!video) return null;
+
+        const { src, currentTime, duration, volume, paused } = video;
+        return { type: 'video', src, currentTime, duration, volume, paused };
+    },
+	createVideo = (width, height, settings) => {
+        const video = document.createElement('video');
+        video.width = width;
+        video.height = height;
+        video.src = settings.src;
+        video.controls = 'controls';
+        video.currentTime = settings.currentTime;
+        video.volume = settings.volume;
+        return video;
+    },
+	createVideoHolder = () => {
+		
+	},
+	init = () => {
+		var video = getCurrentVideo(),
+			holder = createVideoHolder();
+		
+		console.log(video);
+		console.log("^");
+		if (!video)
+			return;
+		
+		console.log('hallo?');
+		
+		// Wrap contents
+		/*document.body.innerHTML = 
+			"<div id=\"wrapper\">" + 
+			document.body.innerHTML + 
+			"</div>";*/
+		
+		Array.from(document.getElementsByTagName("a")).forEach((el, index) => {
+			if (el.hasAttribute("href")) {
+				el.addEventListener("click", (e) => {
+					console.log(e.target);
+					e.preventDefault();
+				});
+			} else {
+				console.log('h');
+			}			
+		});
+	};
+	
+init();
