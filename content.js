@@ -1,259 +1,203 @@
 const Type = {
-    Append: 'appendStyle',
-    Original: 'originalStyle'
+	Append: 'appendStyle',
+	Original: 'originalStyle'
 };
-/*
-class VideoFixer {
-    constructor(video, player, toAppend, toRemove, nodes) {
-        this.video = video;
-        this.player = player;
-        this.toAppend = toAppend;
-        this.toRemove = toRemove;
-        this.nodes = nodes;
-        this.playerStyle = this.player.style;
-        this.appended = false;
-    }
 
-    onScroll() {
-        const line = window.outerHeight * 0.62;
-        const { scrollTop, clientTop } = document.documentElement;
-        const top = (window.pageYOffset || scrollTop) - (clientTop || 0);
+var
+getCurrentVideo = () => {
+	const video = document.getElementsByTagName('video')[0];
+	if (!video)
+		return null;
 
-        if (this.appended && top <= line) {
-            this._remove();
-        } else if (!this.appended && top > line) {
-            this._append();
-        }
-    }
-
-    _append() {
-        this.video.style.width = this.toAppend.width;
-        this.video.style.height = this.toAppend.height;
-
-        Object.keys(this.toAppend).forEach((prop) => {
-            this.player.style[prop] = this.toAppend[prop];
-        });
-
-        this._loopNodes(Type.Append);
-        this.appended = true;
-    }
-
-    _remove() {
-        this.video.style.width = this.toRemove.width;
-        this.video.style.height = this.toRemove.height;
-        this.player.style = this.playerStyle;
-
-        this._loopNodes(Type.Original);
-        this.appended = false;
-    }
-
-    _loopNodes(type) {
-        if (this.nodes) {
-            this.nodes.forEach((node) => {
-                Object.keys(node[type]).forEach((prop) => {
-                    node.el.style[prop] = node[type][prop];
-                });
-            });
-        }
-    }
-}
-
-(function () {
-    const Width = window.outerWidth * 0.3125;
-    const Height = Width * 0.5620;
-    const Settings = {
-        append: { width: Width + 'px', height: Height + 'px' },
-        original: { width: '854px', height: '480px' }
-    };
-    const FixedStyle = {
-        backgroundColor: 'black',
-        position: 'fixed',
-        top: '0',
-        right: '0',
-        'z-index': 9990
-    };
-
-    const appendFixedStyle = el => appendStyles(el, FixedStyle);
-
-    if (window.location.href.includes('/mediabase/')) {
-        setTimeout(() => {
-            const fixer = getFixer();
-
-            if (fixer !== null) {
-                window.addEventListener('scroll', () => {
-                    fixer.onScroll();
-                });
-            }
-        }, 4000);
-    } else {
-        chrome.runtime.sendMessage({ type: 'get' }, (response) => {
-            const settings = response.item;
-            const { type, src } = settings;
-
-            if (type === undefined) return;
-
-            if (type === 'image') {
-                initializeImage(Height, src);
-            } else {
-                initializeVideo(Width, Height, settings);
-            }
-        });
-    }
-
-    function initializeVideo(width, height, videoSettings) {
-        const container = document.createElement('section');
-        const video = createVideo(width, height, videoSettings);
-
-        appendFixedStyle(container);
-        container.appendChild(video);
-        container.appendChild(createCloseButton(() => {
-            chrome.runtime.sendMessage({ type: 'set', item: {} });
-            while (container.firstChild) {
-                container.removeChild(container.firstChild);
-            }
-        }));
-
-        document.body.appendChild(container);
-
-        if (!videoSettings.paused) video.play();
-    }
-
-    function initializeImage(height, src) {
-        const img = document.createElement('img');
-        appendFixedStyle(img);
-        img.src = src;
-        appendStyles(img, { height: height + 'px', right: '159.6px', position: 'absolute' });
-        document.body.appendChild(img);
-    }
-
-    function createCloseButton(onclick) {
-        const button = document.createElement('a');
-        button.innerHTML = '✖';
-        appendStyles(button, {
-            backgroundColor: 'transparent', position: 'fixed', top: '0px', cursor: 'pointer',
-            right: '5px', color: 'white', 'z-index': 9991, fontSize: '20px'
-        });
-        button.addEventListener('click', onclick);
-        return button;
-    }
-
-    function createVideo(width, height, settings) {
-        const video = document.createElement('video');
-        video.width = width;
-        video.height = height;
-        video.src = settings.src;
-        video.controls = 'controls';
-        video.currentTime = settings.currentTime;
-        video.volume = settings.volume;
-        return video;
-    }
-
-    function appendStyles(el, styles) {
-        Object.keys(styles).forEach((prop) => {
-            el.style[prop] = styles[prop];
-        });
-    }
-
-    function getFixer() {
-        const { append, original } = Settings;
-        const { width, height } = original;
-        const video = document.querySelector('video');
-        if (!video) return null;
-
-        const player = document.querySelector('.dump-player');
-        const config = createConfig(append.width, append.height);
-        const nodes = [{
-            el: document.querySelector('article'),
-            appendStyle: { height: '473px' },
-            originalStyle: { height: '638.984px' }
-        }];
-
-        return new VideoFixer(video, player, config, { width, height }, nodes);
-    }
-
-    function createConfig(width, height, offsetTop, offsetRight) {
-        return {
-            position: 'fixed',
-            width: width,
-            height: height,
-            top: offsetTop || '0',
-            right: offsetRight || '0',
-            'z-index': 9990
-        };
-    }
-
-    function getCurrentVideo() {
-        const video = document.getElementsByTagName('video')[0];
-        if (!video) return null;
-
-        const { src, currentTime, duration, volume, paused } = video;
-        return { type: 'video', src, currentTime, duration, volume, paused };
-    }
-
-    window.addEventListener('unload', (e) => {
-		alert(e);
-        const image = document.querySelector('img.player');
-        const video = getCurrentVideo();
-        if (!image && !video) return;
-
-        const item = image ? { type: 'image', src: image.src } : video;
-        const { currentTime, duration } = item;
-
-        chrome.runtime.sendMessage({
-            type: 'set',
-            item: currentTime && duration && (currentTime === duration) ? {} : item
-        });
-    });
-})();*/
-
-var 
-	getCurrentVideo = () => {
-        const video = document.getElementsByTagName('video')[0];
-        if (!video) return null;
-
-        const { src, currentTime, duration, volume, paused } = video;
-        return { type: 'video', src, currentTime, duration, volume, paused };
-    },
-	createVideo = (width, height, settings) => {
-        const video = document.createElement('video');
-        video.width = width;
-        video.height = height;
-        video.src = settings.src;
-        video.controls = 'controls';
-        video.currentTime = settings.currentTime;
-        video.volume = settings.volume;
-        return video;
-    },
-	createVideoHolder = () => {
-		
-	},
-	init = () => {
-		var video = getCurrentVideo(),
-			holder = createVideoHolder();
-		
-		console.log(video);
-		console.log("^");
-		if (!video)
-			return;
-		
-		console.log('hallo?');
-		
-		// Wrap contents
-		/*document.body.innerHTML = 
-			"<div id=\"wrapper\">" + 
-			document.body.innerHTML + 
-			"</div>";*/
-		
-		Array.from(document.getElementsByTagName("a")).forEach((el, index) => {
-			if (el.hasAttribute("href")) {
-				el.addEventListener("click", (e) => {
-					console.log(e.target);
-					e.preventDefault();
-				});
-			} else {
-				console.log('h');
-			}			
-		});
+	const {
+		src,
+		currentTime,
+		duration,
+		volume,
+		paused
+	} = video;
+	return {
+		type: 'video',
+		src,
+		currentTime,
+		duration,
+		volume,
+		paused
 	};
-	
+},
+createVideo = (width, height, settings) => {
+	const video = document.createElement('video');
+	video.width = width;
+	video.height = height;
+	video.src = settings.src;
+	video.controls = 'controls';
+	video.currentTime = settings.currentTime;
+	video.volume = settings.volume;
+	return video;
+},
+createVideoHolder = () => {
+	var holder = document.createElement("div");
+	holder.id = "video-floater";
+	holder.style = "position:fixed;right:15px;bottom:15px;background-color:black;width:400px;height:225px;display:none;z-index:99;box-shadow:0 0 10px #66c221;border:1px solid black";
+	return holder;
+},
+_get = (url, callback) => {
+	var xmlHttp = new XMLHttpRequest();
+	xmlHttp.onreadystatechange = function () {
+		if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+			callback(xmlHttp.responseText);
+	}
+	xmlHttp.open("GET", url, true); // true for asynchronous
+	xmlHttp.send(null);
+},
+_handle = (response) => {
+	var input = response.split("\n"),
+	title = "",
+	content = [],
+	body = {},
+	going = false;
+
+	input.forEach((line, index) => {
+		// Title
+		if (line.indexOf("<title>") >= 0) {
+			title = line.match(/<title>(.*)<\/title>/)[1];
+		}
+		// content
+		if (going) {
+			content.push(line);
+		}
+		if (line.indexOf("dump-main") >= 0) {
+			going = true;
+		} else if (line.indexOf("</footer>") >= 0) {
+			going = false;
+		}
+		// Body
+		if (line.indexOf("<body") >= 0) {
+			var
+			b_attributes = line.match(/<body (.*)>/)[1],
+			regx = /(\S+)=["']([\w -]+)["']/,
+			match = b_attributes.match(new RegExp(regx, "g"));
+
+			match.forEach((item, index) => {
+				var groups = item.match(regx);
+				body[groups[1]] = groups[2];
+			});
+		}
+	});
+	return {
+		title: title,
+		content: content,
+		body: body
+	}
+},
+get_target = (el) => {
+	return el.closest("a");
+},
+override_links = () => {
+	Array.from(document.getElementsByTagName("a"))
+	.forEach((el, index) => {
+		if (el.hasAttribute("href") && el.href.indexOf("www.dumpert.nl") >= 0) {
+			el.addEventListener("click", (e) => {
+				target = get_target(e.target);
+				e.preventDefault();
+				handle(target.href);
+			});
+		}
+	});
+},
+handle = (url) => {
+	_get(url, (m) => {
+		var res = _handle(m);
+
+		var video = document.getElementById("video1");
+
+		if (window.location.href !== url) {
+			window.history.pushState("", "", url);
+		}
+
+		document.getElementsByClassName("dump-main")[0].innerHTML = res['content'].join("\n");
+		document.title = res['title'];
+
+		for (var i = document.body.attributes.length; i-- > 0; )
+			document.body.removeAttributeNode(document.body.attributes[i]);
+		for (var attr in res['body'])
+			document.body.setAttribute(attr, res['body'][attr]);
+
+		location.href = "javascript:dump.init();void 0";
+		setTimeout(() => {
+			override_links();
+			Array.from(document.getElementsByClassName("videoplayer"))
+			.forEach((item, index) => {
+				item.remove();
+			});
+		}, 100);
+
+		if (!url.includes("/mediabase/")) {
+			toggle_video(true, video);
+		}
+		if (url.includes("/mediabase/")) {
+			toggle_video(false, video);
+		}
+
+	});
+},
+toggle_video = (small, video) => {
+	if (!video) {
+		document.getElementById("video-floater")
+		.style.display = "none";
+		return;
+	}
+
+	if (small && video.parentNode !== document.getElementById("video-floater")) {
+		document.getElementById("video-floater")
+		.append(video);
+		document.getElementById("video-floater")
+		.style.display = "block";
+	} else if(!small && video.parentNode !== document.getElementsByClassName("dump-player")[0]) {
+		if (document.getElementsByClassName("dump-player")
+			.length) {
+			document.getElementsByClassName("dump-player")[0].prepend(video);
+			document.getElementById("video-floater")
+			.style.display = "none";
+		}
+	}
+
+	if (video.className.match(/jw-state-playing/))
+		video.children[1].children[0].play();
+},
+getOffsetTop = (elem) => {
+	var offset = 0;
+	do {
+		if (!isNaN(elem.offsetTop)) {
+			offset += elem.offsetTop;
+		}
+	} while (elem = elem.offsetTop);
+	return offset;
+}
+init = () => {
+	var holder = createVideoHolder();
+
+	override_links();
+
+	document.body.append(holder);
+
+	// Events
+	window.addEventListener("popstate", (e) => {
+		handle(location.href);
+	});
+	window.addEventListener("scroll", (e) => {
+		if (location.href.includes("/mediabase/")) {
+			var {
+				scrollTop,
+				clientTop
+			} = document.documentElement;
+			if (scrollTop >= document.getElementsByClassName("dump-player")[0].getBoundingClientRect().bottom) {
+				toggle_video(true, document.getElementById("video1"));
+			} else {
+				toggle_video(false, document.getElementById("video1"));
+			}
+		}
+	});
+};
+
 init();
