@@ -4,18 +4,14 @@
   "manifest_version": 2,
   "content_scripts": [
     {
-      "run_at": "document_end",
       "matches": [
         "*://www.dumpert.nl/*"
       ],
       "js": [
         "content.js"
-      ]
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
     }
-  ],
-  "background": {
-    "scripts": [
-      "background.js"
-    ]
-  }
+  ]
 }

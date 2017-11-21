@@ -1,4 +1,4 @@
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+/*chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const key = 'item';
     const { type, item } = request;
 
@@ -10,3 +10,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({});
     }
 });
+*/
