@@ -1,8 +1,8 @@
 const
-    createVideoHolder = () => {
+    createVideoHolder = (alignment = 'top') => {
         const holder = document.createElement('div');
         holder.id = 'video-floater';
-        holder.style = 'position:fixed;right:15px;bottom:15px;background-color:black;width:400px;height:225px;display:none;z-index:99;box-shadow:0 0 10px #66c221;border:1px solid black';
+        holder.style = `position:fixed;right:15px;${alignment}:15px;background-color:black;width:400px;height:225px;display:none;z-index:99;box-shadow:0 0 10px #66c221;border:1px solid black`;
         return holder;
     },
     get = (url, callback) => {
@@ -91,8 +91,8 @@ const
                     .forEach(item => item.remove());
             }, 100);
 
-            const shouldHideVideo = !url.includes('/mediabase/');
-            toggleVideo(shouldHideVideo, video);
+            const isMainPage = !url.includes('/mediabase/');
+            toggleVideo(isMainPage, video);
         });
     },
     toggleVideo = (small, video) => {
@@ -123,13 +123,16 @@ const
     init = () => {
         overrideLinks();
 
-        document.body.appendChild(createVideoHolder());
+        document.body.appendChild(createVideoHolder('top'));
 
         window.addEventListener('popstate', () => handle(location.href));
         window.addEventListener('scroll', () => {
             if (location.href.includes('/mediabase/')) {
+                const player = document.querySelector('.dump-player');
+                if (!player) return;
+
                 const { scrollTop } = document.documentElement;
-                const hasScrolledDown = scrollTop >= document.querySelector('.dump-player').getBoundingClientRect().bottom;
+                const hasScrolledDown = scrollTop >= player.getBoundingClientRect().bottom;
 
                 toggleVideo(hasScrolledDown, document.getElementById('video1'));
             }
