@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dumpert Video Fixer Instellingen</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+
+<form name="options">
+    <div class="heading">
+        Instellingen Filmvenster
+    </div>
+    <section id="alignment">
+        <div>
+            <label>
+                Rechts bovenaan
+                <input type="radio" value="top" name="alignment" checked/>
+            </label>
+            <label>
+                Rechts onderaan
+                <input type="radio" value="bottom" name="alignment"/>
+            </label>
+        </div>
+    </section>
+
+    <section id="properties">
+        <div>
+            <label>
+                Filmvenster sluiten als de video is afgelopen
+                <input id="close-after-ending" type="checkbox" name="closeAfterEnding"/>
+            </label>
+        </div>
+    </section>
+</form>
+
+</body>
+
+<script src="options.js"></script>
+
+</html>

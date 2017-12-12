@@ -1,0 +1,19 @@
+html, body {
+    font-size: 14px;
+}
+
+form {
+    width: 400px;
+    border: 1px solid black;
+    box-shadow: 0 0 10px #66c221;
+    padding: 10px;
+}
+
+.heading {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+section {
+    margin-top: 10px;
+}
