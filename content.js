@@ -1,5 +1,5 @@
-let CloseVideoAfterEnding,
-    scrollSwitch = false;
+var CloseVideoAfterEnding,
+    ScrollSwitch = false;
 
 function initialize(options) {
     overrideLinks();
@@ -19,22 +19,18 @@ function initialize(options) {
 
         const { scrollTop } = document.documentElement;
         const hasScrolledDown = scrollTop >= player.getBoundingClientRect().bottom;
-        if (hasScrolledDown === scrollSwitch) return;
+        if (hasScrolledDown === ScrollSwitch) return;
 
-        scrollSwitch = hasScrolledDown;
-        resizeVideo(scrollSwitch, document.getElementById('video1'));
+        ScrollSwitch = hasScrolledDown;
+        resizeVideo(document.getElementById('video1'), ScrollSwitch);
     });
 }
 
-function currentVideoHasEnded() {
-    const video = document.querySelector('video');
-    if (video) {
-        return video.currentTime === video.duration;
-    }
-    return false;
+function videoHasEnded(video) {
+    return video ? video.currentTime === video.duration : false;
 }
 
-function resizeVideo(small, video) {
+function resizeVideo(video, small) {
     const videoFloater = document.getElementById('video-floater');
 
     if (!video) {
@@ -43,7 +39,7 @@ function resizeVideo(small, video) {
     }
 
     const dumpPlayers = document.getElementsByClassName('dump-player');
-    const [firstDumpPlayer] = dumpPlayers;
+    const firstDumpPlayer = dumpPlayers[0];
 
     if (small && video.parentNode !== videoFloater) {
         videoFloater.appendChild(video);
@@ -56,17 +52,28 @@ function resizeVideo(small, video) {
     }
 
     if (video.className.match(/jw-state-playing/)) {
-        video.children[1].children[0].play();
+        video.children[1].children[0].play()
+    }
+}
+
+function fullyHideVideo() {
+    const videoFloater = document.getElementById('video-floater');
+    videoFloater.style.display = 'none';
+
+    if (!location.href.includes('/mediabase/')) {
+        const video = document.getElementById('video1');
+
+        if (video) video.querySelector('video').pause();
     }
 }
 
 function handlePageChange(url) {
     getPage(url, (resp) => {
         const { title, content, body } = scrapeNewPage(resp);
-        let makeVideoSmall = !url.includes('/mediabase/');
-        let video = document.getElementById('video1');
+        var makeVideoSmall = !url.includes('/mediabase/');
+        var video = document.getElementById('video1');
 
-        if (CloseVideoAfterEnding && currentVideoHasEnded()) {
+        if (CloseVideoAfterEnding && videoHasEnded(document.querySelector('video'))) {
             makeVideoSmall = false;
             video = null;
         }
@@ -78,7 +85,7 @@ function handlePageChange(url) {
         document.getElementsByClassName('dump-main')[0].innerHTML = content.join('\n');
         document.title = title;
 
-        for (let i = document.body.attributes.length; i-- > 0;) {
+        for (var i = document.body.attributes.length; i-- > 0;) {
             document.body.removeAttributeNode(document.body.attributes[i]);
         }
 
@@ -95,7 +102,7 @@ function handlePageChange(url) {
                 .forEach(item => item.remove());
         }, 100);
 
-        resizeVideo(makeVideoSmall, video);
+        resizeVideo(video, makeVideoSmall);
     });
 }
 
@@ -103,11 +110,18 @@ function createVideoHolder(alignment = 'top') {
     const holder = document.createElement('div');
     holder.id = 'video-floater';
     holder.style = `position:fixed;right:15px;${alignment}:15px;background-color:black;width:400px;height:225px;display:none;z-index:99;box-shadow:0 0 10px #66c221;border:1px solid black`;
+
+    const close = document.createElement('div');
+    close.innerHTML = '&#x2716;';
+    close.style = 'width:24px;height:24px;position:absolute;right:0;top:0;background-color:rgba(102,194,33,0.7);font-size:15px;z-index:100;color:black;cursor:pointer;';
+    close.addEventListener('click', () => fullyHideVideo());
+
+    holder.appendChild(close);
     return holder;
 }
 
 function scrapeNewPage(response) {
-    let input = response.split('\n'),
+    var input = response.split('\n'),
         title = '',
         content = [],
         body = {},

@@ -24,12 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
 function save(obj) {
     if (obj === undefined || obj === null) return;
 
-    let options = getStored(OPTIONS_KEY) || {},
-        keys = Object.keys(options);
+    let options = getStored(OPTIONS_KEY);
 
-    if (keys.length === 0) {
-        options = obj;
-    } else {
+    if (options === null) options = obj;
+    else {
         Object.keys(obj).forEach((key) => {
             options[key] = obj[key];
         });
