@@ -1,4 +1,4 @@
-var CloseVideoAfterEnding,
+let CloseVideoAfterEnding,
     ScrollSwitch = false;
 
 function initialize(options) {
@@ -26,9 +26,7 @@ function initialize(options) {
     });
 }
 
-function videoHasEnded(video) {
-    return video ? video.currentTime === video.duration : false;
-}
+const videoHasEnded = (video) => video ? video.currentTime === video.duration : false;
 
 function resizeVideo(video, small) {
     const videoFloater = document.getElementById('video-floater');
@@ -70,8 +68,8 @@ function fullyHideVideo() {
 function handlePageChange(url) {
     getPage(url, (resp) => {
         const { title, content, body } = scrapeNewPage(resp);
-        var makeVideoSmall = !url.includes('/mediabase/');
-        var video = document.getElementById('video1');
+        let makeVideoSmall = !url.includes('/mediabase/');
+        let video = document.getElementById('video1');
 
         if (CloseVideoAfterEnding && videoHasEnded(document.querySelector('video'))) {
             makeVideoSmall = false;
@@ -85,7 +83,7 @@ function handlePageChange(url) {
         document.getElementsByClassName('dump-main')[0].innerHTML = content.join('\n');
         document.title = title;
 
-        for (var i = document.body.attributes.length; i-- > 0;) {
+        for (let i = document.body.attributes.length; i-- > 0;) {
             document.body.removeAttributeNode(document.body.attributes[i]);
         }
 
@@ -121,26 +119,17 @@ function createVideoHolder(alignment = 'top') {
 }
 
 function scrapeNewPage(response) {
-    var input = response.split('\n'),
-        title = '',
-        content = [],
-        body = {},
-        lineBelongsToDump = false;
+    const input = response.split('\n');
+    let title = '';
+    const content = [],
+        body = {};
+    let lineBelongsToDump = false;
 
     input.forEach((line) => {
-        if (line.includes('<title>')) {
-            title = line.match(/<title>(.*)<\/title>/)[1];
-        }
-
-        if (lineBelongsToDump) {
-            content.push(line);
-        }
-
-        if (line.includes('dump-main')) {
-            lineBelongsToDump = true;
-        } else if (line.includes('</footer>')) {
-            lineBelongsToDump = false;
-        }
+        if (line.includes('<title>')) title = line.match(/<title>(.*)<\/title>/)[1];
+        if (lineBelongsToDump) content.push(line);
+        if (line.includes('dump-main')) lineBelongsToDump = true;
+        else if (line.includes('</footer>')) lineBelongsToDump = false;
 
         if (line.includes('<body')) {
             const b_attributes = line.match(/<body (.*)>/)[1],

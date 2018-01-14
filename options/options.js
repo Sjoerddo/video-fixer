@@ -1,45 +1,45 @@
 const OPTIONS_KEY = 'options';
 const Form = document.forms.options;
+const InputTypes = { radio: 'value', checkbox: 'checked' };
+const ValueTypes = { string: 'value', boolean: 'checked' };
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('input[type="radio"][name="alignment"]').forEach((alignment) => {
-        alignment.addEventListener('click', ({ target }) => {
-            save({ alignment: target.value });
-        });
-    });
+    addEvent('input[type="radio"][name="alignment"]', ['click', saveInputTarget]);
+    addEvent('#close-after-ending', ['click', saveInputTarget]);
 
-    document.getElementById('close-after-ending').addEventListener('click', ({ target }) => {
-        save({ closeAfterEnding: target.checked });
-    });
-
-    const storedOptions = getStored(OPTIONS_KEY);
-
-    Object.keys(storedOptions).forEach((key) => {
-        const value = storedOptions[key];
-        const valueType = typeof value === 'boolean' ? 'checked' : 'value';
-        Form[key][valueType] = value;
+    const options = getOptions(OPTIONS_KEY) || {};
+    Object.entries(options).forEach(([key, value]) => {
+        Form[key][ValueTypes[typeof value]] = value;
     });
 });
 
-function save(obj) {
-    if (obj === undefined || obj === null) return;
+const addEvent = (selector, [name, listener]) => {
+    const elements = document.querySelectorAll(selector);
 
-    let options = getStored(OPTIONS_KEY);
+    elements.forEach((element) => {
+        element.addEventListener(name, listener);
+    });
+};
 
-    if (options === null) options = obj;
-    else {
-        Object.keys(obj).forEach((key) => {
-            options[key] = obj[key];
-        });
-    }
+const saveInputTarget = ({ target }) => {
+    const type = InputTypes[target.type];
+    save({ [target.name]: target[type] });
+};
 
-    setStored(OPTIONS_KEY, options);
-}
+const save = (obj) => {
+    const options = getOptions(OPTIONS_KEY) || {};
 
-function getStored(key) {
+    Object.entries(obj).forEach(([key, value]) => {
+        options[key] = value;
+    });
+
+    setOptions(OPTIONS_KEY, options);
+};
+
+const getOptions = (key) => {
     return JSON.parse(localStorage.getItem(key));
-}
+};
 
-function setStored(key, obj) {
-    localStorage.setItem(key, JSON.stringify(obj));
-}
+const setOptions = (key, options) => {
+    return localStorage.setItem(key, JSON.stringify(options));
+};

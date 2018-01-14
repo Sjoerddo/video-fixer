@@ -8,5 +8,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function getOptions() {
-    return JSON.parse(localStorage.getItem('options')) || { alignment: 'top', closeAfterEnding: true };
+    return JSON.parse(localStorage.getItem('options')) || { alignment: 'top', closeAfterEnding: false };
 }
